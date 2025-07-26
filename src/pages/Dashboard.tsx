@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,17 +18,31 @@ import {
   Settings,
   LogOut,
   Award,
-  Target
+  Target,
+  Shield
 } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  // Mock user data
-  const user = {
+  useEffect(() => {
+    // Get user from localStorage
+    const storedUser = localStorage.getItem('lambdaUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      // Redirect to login if no user found
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Default user data if none stored
+  const userData = user || {
     name: "Marcus Johnson",
     memberId: "LEM-2024-001",
+    role: "member",
     level: "Chapter Member",
     chapter: "Alpha Beta Chapter",
     region: "Southeast Region",
@@ -47,9 +61,31 @@ const Dashboard = () => {
     { icon: Award, label: "Empire House" },
   ];
 
+  // Add admin-only menu items
+  if (userData.role === 'admin') {
+    menuItems.push(
+      { icon: Shield, label: "Admin Panel" },
+      { icon: Settings, label: "System Settings" }
+    );
+  }
+
   const handleLogout = () => {
+    localStorage.removeItem('lambdaUser');
     navigate('/');
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-lambda-50 via-white to-lambda-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 lambda-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white font-playfair font-bold text-2xl">Λ</span>
+          </div>
+          <p className="text-lambda-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-lambda-50 via-white to-lambda-100">
@@ -94,15 +130,27 @@ const Dashboard = () => {
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 gold-gradient rounded-full flex items-center justify-center">
                 <span className="text-lambda-900 font-semibold text-lg">
-                  {user.name.split(' ').map(n => n[0]).join('')}
+                  {userData.name.split(' ').map((n: string) => n[0]).join('')}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-lambda-800 truncate">{user.name}</p>
-                <p className="text-sm text-lambda-600 truncate">{user.memberId}</p>
-                <Badge className="mt-1 bg-lambda-100 text-lambda-700 text-xs">
-                  {user.status}
-                </Badge>
+                <p className="font-semibold text-lambda-800 truncate">{userData.name}</p>
+                <p className="text-sm text-lambda-600 truncate">{userData.memberId}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-lambda-100 text-lambda-700 text-xs">
+                    {userData.status}
+                  </Badge>
+                  {userData.role === 'admin' && (
+                    <Badge className="bg-red-100 text-red-700 text-xs">
+                      Admin
+                    </Badge>
+                  )}
+                  {userData.role === 'coordinator' && (
+                    <Badge className="bg-blue-100 text-blue-700 text-xs">
+                      Coordinator
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -160,11 +208,16 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-playfair font-bold text-lambda-900">
-                  Welcome back, {user.name.split(' ')[0]}!
+                  Welcome back, {userData.name.split(' ')[0]}!
                 </h1>
                 <p className="text-lambda-600 mt-1">
-                  {user.chapter} • {user.region}
+                  {userData.chapter || 'Lambda Empire'} • {userData.region || 'National Level'}
                 </p>
+                {userData.role === 'admin' && (
+                  <Badge className="mt-2 bg-red-100 text-red-700">
+                    Administrator Access
+                  </Badge>
+                )}
               </div>
               <Button className="mt-4 sm:mt-0 lambda-gradient text-white">
                 <Bell className="mr-2 h-4 w-4" />
@@ -194,11 +247,15 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-lambda-800">24</span>
+                  <span className="text-2xl font-bold text-lambda-800">
+                    {userData.role === 'admin' ? '156' : '24'}
+                  </span>
                   <Target className="h-5 w-5 text-lambda-500" />
                 </div>
-                <Progress value={80} className="mt-2" />
-                <p className="text-sm text-lambda-600 mt-1">6 hours to goal</p>
+                <Progress value={userData.role === 'admin' ? 100 : 80} className="mt-2" />
+                <p className="text-sm text-lambda-600 mt-1">
+                  {userData.role === 'admin' ? 'Goal exceeded!' : '6 hours to goal'}
+                </p>
               </CardContent>
             </Card>
 
@@ -221,11 +278,15 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-lambda-800">85%</span>
+                  <span className="text-2xl font-bold text-lambda-800">
+                    {userData.role === 'admin' ? '100%' : '85%'}
+                  </span>
                   <BookOpen className="h-5 w-5 text-lambda-500" />
                 </div>
-                <Progress value={85} className="mt-2" />
-                <p className="text-sm text-lambda-600 mt-1">2 modules remaining</p>
+                <Progress value={userData.role === 'admin' ? 100 : 85} className="mt-2" />
+                <p className="text-sm text-lambda-600 mt-1">
+                  {userData.role === 'admin' ? 'All modules complete' : '2 modules remaining'}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -254,7 +315,9 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-lambda-800">Service Hours Logged</p>
-                    <p className="text-sm text-lambda-600">8 hours • Community Service</p>
+                    <p className="text-sm text-lambda-600">
+                      {userData.role === 'admin' ? '20 hours • Administrative Tasks' : '8 hours • Community Service'}
+                    </p>
                   </div>
                 </div>
 
@@ -264,7 +327,9 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-lambda-800">Module Completed</p>
-                    <p className="text-sm text-lambda-600">Leadership Fundamentals</p>
+                    <p className="text-sm text-lambda-600">
+                      {userData.role === 'admin' ? 'Advanced Leadership' : 'Leadership Fundamentals'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -291,10 +356,17 @@ const Dashboard = () => {
                   Continue Learning
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-start border-lambda-200 text-lambda-700">
-                  <Users className="mr-3 h-4 w-4" />
-                  View Directory
-                </Button>
+                {userData.role === 'admin' ? (
+                  <Button variant="outline" className="w-full justify-start border-lambda-200 text-lambda-700">
+                    <Shield className="mr-3 h-4 w-4" />
+                    Admin Panel
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full justify-start border-lambda-200 text-lambda-700">
+                    <Users className="mr-3 h-4 w-4" />
+                    View Directory
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>

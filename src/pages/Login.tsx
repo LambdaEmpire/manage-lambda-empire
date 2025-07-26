@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Info } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,15 +15,65 @@ const Login = () => {
     password: ''
   });
 
+  // Mock user accounts for demo
+  const mockUsers = [
+    {
+      email: 'admin@lambdaempire.org',
+      password: 'admin123',
+      role: 'admin',
+      name: 'Sarah Williams',
+      memberId: 'LEM-ADMIN-001'
+    },
+    {
+      email: 'member@lambdaempire.org',
+      password: 'member123',
+      role: 'member',
+      name: 'Marcus Johnson',
+      memberId: 'LEM-2024-001'
+    },
+    {
+      email: 'coordinator@lambdaempire.org',
+      password: 'coord123',
+      role: 'coordinator',
+      name: 'Dr. Michael Davis',
+      memberId: 'LEM-COORD-001'
+    }
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // For demo purposes, accept any email/password
-    if (formData.email && formData.password) {
-      toast.success('Login successful! Welcome to Lambda Empire.');
-      navigate('/dashboard');
-    } else {
+    if (!formData.email || !formData.password) {
       toast.error('Please enter both email and password.');
+      return;
+    }
+
+    // Check against mock users
+    const user = mockUsers.find(
+      u => u.email === formData.email && u.password === formData.password
+    );
+
+    if (user) {
+      // Store user info in localStorage for demo purposes
+      localStorage.setItem('lambdaUser', JSON.stringify(user));
+      
+      toast.success(`Welcome back, ${user.name}! Logging you in...`);
+      
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
+    } else {
+      toast.error('Invalid email or password. Please try the demo credentials below.');
+    }
+  };
+
+  const fillDemoCredentials = (userType: 'admin' | 'member' | 'coordinator') => {
+    const user = mockUsers.find(u => u.role === userType);
+    if (user) {
+      setFormData({
+        email: user.email,
+        password: user.password
+      });
     }
   };
 
@@ -38,6 +88,58 @@ const Login = () => {
           <h1 className="font-playfair font-bold text-2xl text-lambda-900">Lambda Empire</h1>
           <p className="text-lambda-600">Member Portal Access</p>
         </div>
+
+        {/* Demo Credentials Info */}
+        <Card className="border-lambda-200 mb-6 bg-lambda-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-lambda-800 flex items-center">
+              <Info className="h-4 w-4 mr-2" />
+              Demo Credentials
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials('admin')}
+                className="justify-start text-left border-lambda-300 hover:bg-lambda-100"
+              >
+                <div>
+                  <div className="font-semibold">Admin Account</div>
+                  <div className="text-lambda-600">admin@lambdaempire.org / admin123</div>
+                </div>
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials('member')}
+                className="justify-start text-left border-lambda-300 hover:bg-lambda-100"
+              >
+                <div>
+                  <div className="font-semibold">Member Account</div>
+                  <div className="text-lambda-600">member@lambdaempire.org / member123</div>
+                </div>
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials('coordinator')}
+                className="justify-start text-left border-lambda-300 hover:bg-lambda-100"
+              >
+                <div>
+                  <div className="font-semibold">Coordinator Account</div>
+                  <div className="text-lambda-600">coordinator@lambdaempire.org / coord123</div>
+                </div>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-lambda-200 shadow-xl">
           <CardHeader className="text-center">
